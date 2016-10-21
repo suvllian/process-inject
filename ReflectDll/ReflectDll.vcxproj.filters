@@ -18,9 +18,12 @@
     <ClCompile Include="ReflectiveDll.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ReflectLoader.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RflectiveLoader.h">
+    <ClInclude Include="ReflectiveLoader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -147,9 +147,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ReflectiveDll.c" />
+    <ClCompile Include="ReflectLoader.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RflectiveLoader.h" />
+    <ClInclude Include="ReflectiveLoader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
