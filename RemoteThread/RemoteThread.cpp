@@ -40,6 +40,7 @@ BOOL  InjectDllByRemoteThread(ULONG32 ulTargetProcessID, WCHAR* wzDllFullPath)
 	}
 	WCHAR* VirtualAddress = NULL;
 	ULONG32 ulDllLength = (ULONG32)_tcslen(wzDllFullPath) + 1;
+	//ALLOC Address for Dllpath
 	VirtualAddress = (WCHAR*)VirtualAllocEx(TargetProcessHandle, NULL, ulDllLength * sizeof(WCHAR), MEM_COMMIT, PAGE_READWRITE);
 	if (NULL == VirtualAddress)
 	{
