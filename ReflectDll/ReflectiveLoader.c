@@ -1,10 +1,7 @@
-
-//===============================================================================================//
 #include "ReflectiveLoader.h"
 
 HINSTANCE hAppInstance = NULL;
-//===============================================================================================//
-//?
+
 #pragma intrinsic( _ReturnAddress )
 
 __declspec(noinline) ULONG_PTR caller( VOID ) { return (ULONG_PTR)_ReturnAddress(); }
@@ -77,7 +74,7 @@ DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader( VOID )
 	uiBaseAddress = __readfsdword( 0x30 );
 #endif
 
-	// get the processes loaded modules. ref: http://msdn.microsoft.com/en-us/library/aa813708(VS.85).aspx
+
 	uiBaseAddress = (ULONG_PTR)((_PPEB)uiBaseAddress)->pLdr;
 
 	// get the first entry of the InMemoryOrder module list
@@ -392,6 +389,4 @@ DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader( VOID )
 	// STEP 8: return our new entry point address so whatever called us can call DllMain() if needed.
 	return uiValueA;
 }
-//===============================================================================================//
 
-//===============================================================================================//

@@ -16,13 +16,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	ULONG32  ulProcessID = 0;
 	printf("Input ProcessID\r\n");
-	cin >> ulProcessID;    		//输入需要注入的进程ID
+	cin >> ulProcessID;    		
 	WCHAR  wzDllFullPath[MAX_PATH] = { 0 };
-	//GetCurrentDirectory(MAX_PATH, wzDllFullPath);	
 #ifdef  _WIN64		
 	wcsncat_s(wzDllFullPath, L"E:\\Dll64.dll", 20);
-#else
-														//将当前进程目录与第二参数进行连接，如果DLL放在其他位置，则需要进行更改。
+#else												
 	wcsncat_s(wzDllFullPath, L"E:\\Dll.dll", 20);
 #endif
 	InjectDllByRemoteThread(ulProcessID, wzDllFullPath);
@@ -48,7 +46,7 @@ BOOL  InjectDllByRemoteThread(ULONG32 ulTargetProcessID, WCHAR* wzDllFullPath)
 		CloseHandle(TargetProcessHandle);
 		return FALSE;
 	}
-	// 在目标进程的内存空间中写入模块地址
+	// write
 	if (FALSE == WriteProcessMemory(TargetProcessHandle, VirtualAddress, (LPVOID)wzDllFullPath, ulDllLength * sizeof(WCHAR), NULL))
 	{
 		printf("failed to write!!\n");
@@ -59,15 +57,15 @@ BOOL  InjectDllByRemoteThread(ULONG32 ulTargetProcessID, WCHAR* wzDllFullPath)
 	LPTHREAD_START_ROUTINE FunctionAddress = NULL;
 	FunctionAddress = (PTHREAD_START_ROUTINE)::GetProcAddress(::GetModuleHandle(_T("Kernel32")), "LoadLibraryW");
 	HANDLE ThreadHandle = INVALID_HANDLE_VALUE;
+	//start
 	ThreadHandle = CreateRemoteThread(TargetProcessHandle, NULL, 0, FunctionAddress, VirtualAddress, 0, NULL);
-	//得到LoadLibraryW后用来启动远程线程
 	if (NULL == ThreadHandle)
 	{
 		VirtualFreeEx(TargetProcessHandle, VirtualAddress, ulDllLength, MEM_DECOMMIT);
 		CloseHandle(TargetProcessHandle);
 		return FALSE;
 	}
-	// 等待远程线程结束
+	// WaitForSingleObject
 	WaitForSingleObject(ThreadHandle, INFINITE);
 	VirtualFreeEx(TargetProcessHandle, VirtualAddress, ulDllLength, MEM_DECOMMIT);			// 清理
 	CloseHandle(ThreadHandle);
@@ -94,7 +92,7 @@ BOOL EnableDebugPrivilege()
 	TokenPrivilege.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 	TokenPrivilege.Privileges[0].Luid = uID;
 	if (!AdjustTokenPrivileges(TokenHandle, FALSE, &TokenPrivilege, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
-		//在这里我们进行调整权限
+	//调整权限
 	{
 		CloseHandle(TokenHandle);
 		TokenHandle = INVALID_HANDLE_VALUE;

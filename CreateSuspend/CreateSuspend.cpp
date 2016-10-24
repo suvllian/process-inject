@@ -58,32 +58,22 @@ int _tmain(int argc, char* argv[])
 	ZeroMemory(&pi, sizeof(pi));
 	CreateProcessA("D:\\火狐\\firefox.exe", NULL, NULL, NULL, NULL, CREATE_SUSPENDED, NULL, NULL, &Startup, &pi);
 
-	printf("Allocating Remote Memory For DLL Path\n");
 	Remote_DllStringPtr = VirtualAllocEx(pi.hProcess, NULL, strlen(DllPath) + 1, MEM_COMMIT, PAGE_READWRITE);
-	printf("DLL Adress: %X\n", Remote_DllStringPtr);
+	printf("为DLL路径申请到的地址：%X\n", Remote_DllStringPtr);
 
 	printf("Get EIP\n");
 	ctx.ContextFlags = CONTEXT_CONTROL;
 	GetThreadContext(pi.hThread, &ctx);
-
 	printf("EIP: %X\n", ctx.Eip);
 
-	printf("Build Shellcode\n");
+	printf("创建ShellCode\n");
 	CreateShellCode(ctx.Eip, (int)Remote_DllStringPtr, &ShellCode, &ShellCodeLength);
 
-	printf("Created Shellcode: \n");
-	for (int i = 0; i<ShellCodeLength; i++)
-		printf("%X ", ShellCode[i]);
-	printf("\n");
 
 	printf("Allocating Remote Memory For Shellcode\n");
 	Remote_ShellCodePtr = VirtualAllocEx(pi.hProcess, NULL, ShellCodeLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	printf("Shellcode Adress: %X\n", Remote_ShellCodePtr);
 
-	printf("Write DLL Path To Remote Process\n");
 	WriteProcessMemory(pi.hProcess, Remote_DllStringPtr, DllPath, strlen(DllPath) + 1, NULL);
-
-	printf("Write Shellcode To Remote Process\n");
 	WriteProcessMemory(pi.hProcess, Remote_ShellCodePtr, ShellCode, ShellCodeLength, NULL);
 
 	printf("Set EIP\n");
@@ -91,13 +81,11 @@ int _tmain(int argc, char* argv[])
 	ctx.ContextFlags = CONTEXT_CONTROL;
 	SetThreadContext(pi.hThread, &ctx);
 
-	printf("Run The Shellcode\n");
+	printf("ResumeThread\n");
 	ResumeThread(pi.hThread);
 
-	printf("Wait Till Code Was Executed\n");
 	Sleep(8000);
 
-	printf("Free Remote Resources\n");
 	VirtualFreeEx(pi.hProcess, Remote_DllStringPtr, strlen(DllPath) + 1, MEM_DECOMMIT);
 	VirtualFreeEx(pi.hProcess, Remote_ShellCodePtr, ShellCodeLength, MEM_DECOMMIT);
 

@@ -107,7 +107,7 @@ HANDLE LoadRemoteLibraryR(HANDLE hProcess, LPVOID lpBuffer, DWORD dwLength, LPVO
 				break;
 			}
 
-			// check if the library has a ReflectiveLoader...
+			// 得到加载动态库函数在dll文件中的偏移
 			dwReflectiveLoaderOffset = GetLoaderOffset(lpBuffer);
 			if (!dwReflectiveLoaderOffset)
 			{
@@ -130,7 +130,7 @@ HANDLE LoadRemoteLibraryR(HANDLE hProcess, LPVOID lpBuffer, DWORD dwLength, LPVO
 
 			// add the offset to ReflectiveLoader() to the remote library address...
 			lpReflectiveLoader = (LPTHREAD_START_ROUTINE)((ULONG_PTR)lpRemoteLibraryBuffer + dwReflectiveLoaderOffset);
-			//创建远程线程加载动态库
+			//创建远程线程加载动态库，将加载动态库函数 执行
 			// create a remote thread in the host process to call the ReflectiveLoader!
 			hThread = CreateRemoteThread(hProcess, NULL, 1024 * 1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
 
@@ -206,7 +206,6 @@ DWORD GetLoaderOffset(VOID* lpReflectiveDllBuffer)
 #ifdef _WIN64
 	DWORD dwCompiledArch = 2;
 #else
-	// This will catch Win32 and WinRT.
 	DWORD dwCompiledArch = 1;
 #endif
 
@@ -234,7 +233,7 @@ DWORD GetLoaderOffset(VOID* lpReflectiveDllBuffer)
 	}
 
 	uiDictArray = (UINT_PTR)&((PIMAGE_NT_HEADERS)uiBaseAddressOfNtHeader)->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-
+	//导出表在文件中的偏移
 	uiExportFOA = uiBaseAddress + RvaToOffset(((PIMAGE_DATA_DIRECTORY)uiDictArray)->VirtualAddress, uiBaseAddress);
 
 	// get the File Offset for the array of name pointers

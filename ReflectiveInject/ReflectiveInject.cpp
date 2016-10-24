@@ -11,9 +11,9 @@ using namespace std;
 int main()
 {
 #ifdef  _WIN64
-	char * DllFilePath = "E://Dll64.dll";
+	char * DllFilePath = "E://ReflectDll64.dll";
 #else
-	char * DllFilePath = "E://Dll.dll";
+	char * DllFilePath = "E://ReflectDll.dll";
 #endif
 	
 	DWORD dwProcessId = 0;
@@ -76,7 +76,7 @@ int main()
 			printf("Open Target Process Failed\r\n");
 			return 0;
 		}
-
+		//自己实现
 		hModule = LoadRemoteLibraryR(ProcessHandle, lpBuffer, dwLength, NULL);
 		if (!hModule)
 		{
