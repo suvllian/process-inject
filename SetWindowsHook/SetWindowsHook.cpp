@@ -1,133 +1,152 @@
-// SetWindowsHook.cpp : ∂®“Âøÿ÷∆Ã®”¶”√≥Ã–Úµƒ»Îø⁄µ„°£
+Ôªø// SetWindowsHook.cpp : ¬∂¬®√í√•¬ø√ò√ñ√Ü√å¬®√ì¬¶√ì√É¬≥√å√ê√≤¬µ√Ñ√à√´¬ø√ö¬µ√£¬°¬£
 //
 
 #include "stdafx.h"
+#include <Windows.h>
+#include <TlHelp32.h> 
 #include<iostream>
-#include<Windows.h>
-#include<TlHelp32.h>
 using namespace std;
 
-BOOL SetWinHookInject(WCHAR * wzDllPath, int wzProcessId);
-DWORD GetThreadIdByProcessId(int ProcessId);
 
-int _tmain(int argc, char* argv[])
+BOOL GetProcessIDByProcessImageName(WCHAR* wzProcessImageName, ULONG32* ulTargetProcessID);
+BOOL InjectDllBySetWindowsHook(ULONG32 ulTargetProcessID);
+DWORD getThreadID(ULONG32 ulTargetProcessID);
+int main()
 {
-	int ProcessID = 0;
-	cout << "Input ProcessID" << endl;
-	cin >> ProcessID;
+	ULONG32 ulTargetProcessID = 0;
 
-#ifdef _WIN64
-	WCHAR wzDllFullPath[0x20] = L"E:\\SetWindowDll64.dll";
-#else
-	WCHAR wzDllFullPath[0x20] = L"E:\\SetWindowDll.dll";
-#endif // _WIN64
-
-	if (!SetWinHookInject(wzDllFullPath, ProcessID))
+	if (GetProcessIDByProcessImageName(L"sublime_text.exe", &ulTargetProcessID) == FALSE)
 	{
-		printf("Set Hook Unsuccess!\r\n");
 		return 0;
 	}
-	printf("Inject Success!\r\n");
 
+	if (InjectDllBySetWindowsHook(ulTargetProcessID) == FALSE)
+	{
+		return 0;
+	}
 	return 0;
 }
 
-BOOL SetWinHookInject(WCHAR * wzDllPath, int wzProcessId)
+BOOL GetProcessIDByProcessImageName(WCHAR* wzProcessImageName, ULONG32* ulTargetProcessID)
 {
-	HMODULE ModuleHandle = NULL;
-	BOOL    bOk = FALSE;
-	DWORD   FunctionAddress = NULL;
-	UINT32 dwThreadId = 0;
-	HHOOK  g_hHook = NULL;
-	PVOID  pShareM = NULL;
+	ULONG32 i = 0;
+	BOOL   bOk = FALSE;
+	HANDLE ToolHelpHandle = NULL;
 
-	printf("SetWinHKInject Enter!\n");
+	PROCESSENTRY32 ProcessEntry32 = { 0 };
+	ProcessEntry32.dwSize = sizeof(PROCESSENTRY32);
 
-	ModuleHandle = LoadLibrary(wzDllPath);
-	if (!ModuleHandle)
+	ToolHelpHandle = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	if (ToolHelpHandle == INVALID_HANDLE_VALUE)
 	{
-		printf("LoadLibrary error!\n");
-
 		return FALSE;
 	}
 
-	FunctionAddress = (DWORD)GetProcAddress(ModuleHandle, "MyMessageProcess");
-	if (!FunctionAddress)
+	bOk = Process32First(ToolHelpHandle, &ProcessEntry32);
+	do
 	{
-		printf("GetProcAddress error!\n");
-		FreeLibrary(ModuleHandle);
-		return FALSE;
-	}
-
-	dwThreadId = GetThreadIdByProcessId(wzProcessId);
-
-	int a = GetLastError();
-	if (!dwThreadId)
-	{
-		FreeLibrary(ModuleHandle);
-		return FALSE;
-	}
-
-	g_hHook = SetWindowsHookEx(
-		WH_GETMESSAGE,
-		(HOOKPROC)FunctionAddress,
-		ModuleHandle,
-		dwThreadId
-	);
-	a = GetLastError();
-	if (!g_hHook)
-	{
-		printf("[+] SetWindowsHookEx  error!\n");
-		FreeLibrary(ModuleHandle);
-		return FALSE;
-	}
-	printf("[!] SetWinHKInject Exit!\n");
-	return TRUE;
-
-}
-
-DWORD GetThreadIdByProcessId(int ProcessId)
-{
-	DWORD m_ThreadId = 0;
-	FILETIME RunTime = { 0 };
-	const DWORD m_ProcessId = ProcessId;
-
-	HANDLE hThreadSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, m_ProcessId);//ªÒ»°øÏ’’æ‰±˙
-	if (hThreadSnap == INVALID_HANDLE_VALUE)//»Áπ˚ªÒ»° ß∞‹∑µªÿ
-	{
-		return 0;
-	}
-	THREADENTRY32 pe32 = { sizeof(pe32) };//øÏ’’Ω·ππ≤¢∏¯”Ë¥Û–°
-	if (::Thread32First(hThreadSnap, &pe32))
-	{
-		do
+		if (bOk)
 		{
-			if (pe32.th32OwnerProcessID == m_ProcessId)//»Áπ˚Ω¯≥ÃIDµ»”⁄ƒ„œÎ—∞’“µƒΩ¯≥ÃID‘Ú∑µªÿ÷˜œﬂ≥ÃID
+			if (wcsicmp(ProcessEntry32.szExeFile, wzProcessImageName) == 0)
 			{
-				HANDLE ThreadHandle = OpenThread(THREAD_SUSPEND_RESUME, FALSE, pe32.th32ThreadID);
+				*ulTargetProcessID = ProcessEntry32.th32ProcessID;
 
-				FILETIME CreateTime, LoadStopTime, LoadTimeInKerner, LoadTimeInUser;
-				::GetThreadTimes(ThreadHandle, &CreateTime, &LoadStopTime, &LoadTimeInKerner, &LoadTimeInUser);
-				SYSTEMTIME RealTime;
-				::FileTimeToSystemTime(&CreateTime, &RealTime);
-				if (CreateTime.dwHighDateTime < RunTime.dwHighDateTime
-					|| (RunTime.dwHighDateTime == 0 && RunTime.dwLowDateTime == 0))
-				{
-					m_ThreadId = pe32.th32ThreadID;
-					RunTime = CreateTime;
-					return m_ThreadId;
-				}
-				else
-					if (CreateTime.dwHighDateTime == RunTime.dwHighDateTime &&
-						CreateTime.dwLowDateTime < RunTime.dwLowDateTime)
-					{
-						m_ThreadId = pe32.th32ThreadID;
-						RunTime = CreateTime;
-						return m_ThreadId;
-					}
+				CloseHandle(ToolHelpHandle);
+				ToolHelpHandle = INVALID_HANDLE_VALUE;
+				return TRUE;
 			}
-		} while (::Thread32Next(hThreadSnap, &pe32));
-	}//∑Ò‘Ú—≠ª∑≈–∂œŒ≤
-	CloseHandle(hThreadSnap);
+		}
+		else
+		{
+			break;
+		}
+
+		bOk = Process32Next(ToolHelpHandle, &ProcessEntry32);
+
+	} while (1);
+
+	CloseHandle(ToolHelpHandle);
+	ToolHelpHandle = INVALID_HANDLE_VALUE;
+	return FALSE;
 }
 
+DWORD getThreadID(ULONG32 ulTargetProcessID)
+{
+	HANDLE Handle = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	if (Handle != INVALID_HANDLE_VALUE)
+	{
+		THREADENTRY32 te;
+		te.dwSize = sizeof(te);
+		if (Thread32First(Handle, &te))
+		{
+			do
+			{
+				if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
+				{
+					if (te.th32OwnerProcessID == ulTargetProcessID)
+					{
+						HANDLE hThread = OpenThread(READ_CONTROL, FALSE, te.th32ThreadID);
+						if (!hThread)
+						{
+							puts("Couldn't get thread handle");
+						}
+						else
+						{
+							return te.th32ThreadID;
+						}
+					}
+				}
+			} while (Thread32Next(Handle, &te));
+		}
+	}
+	CloseHandle(Handle);
+	return (DWORD)0;
+}
+
+BOOL InjectDllBySetWindowsHook(ULONG32 ulTargetProcessID)
+{
+	HANDLE  TargetProcessHandle = NULL;
+	TargetProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, ulTargetProcessID);
+
+	if (NULL == TargetProcessHandle)
+	{
+		return FALSE;
+	}
+	HMODULE DllModule;
+#ifdef _WIN64
+	DllModule = LoadLibrary(L"E:\\WindowsDll64.dll");
+#else
+	DllModule = LoadLibrary(L"E:\\WindowsDll.dll");
+#endif
+
+
+	if (DllModule == NULL)
+	{
+		printf("cannt find dll");
+		return FALSE;
+	}
+
+	HOOKPROC   Sub_1Address = NULL;
+	Sub_1Address = (HOOKPROC)GetProcAddress(DllModule, "Sub_1");
+	if (Sub_1Address == NULL)
+	{
+		printf("cannt found Sub_1");
+		return FALSE;
+	}
+
+	DWORD ThreadID = getThreadID(ulTargetProcessID);
+
+	HHOOK Handle = SetWindowsHookEx(WH_KEYBOARD,
+		Sub_1Address, DllModule, ThreadID);
+
+	if (Handle == NULL)
+	{
+		printf("cannt hook");
+		return FALSE;
+	}
+	printf("hook success");
+	getchar();
+	UnhookWindowsHookEx(Handle);
+	FreeLibrary(DllModule);
+}
