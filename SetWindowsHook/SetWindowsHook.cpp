@@ -82,6 +82,7 @@ DWORD getThreadID(ULONG32 ulTargetProcessID)
 		{
 			do
 			{
+				//线程是否可用
 				if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID))
 				{
 					if (te.th32OwnerProcessID == ulTargetProcessID)
@@ -89,7 +90,7 @@ DWORD getThreadID(ULONG32 ulTargetProcessID)
 						HANDLE hThread = OpenThread(READ_CONTROL, FALSE, te.th32ThreadID);
 						if (!hThread)
 						{
-							puts("Couldn't get thread handle");
+							puts("Can't get thread handle");
 						}
 						else
 						{
@@ -123,7 +124,7 @@ BOOL InjectDllBySetWindowsHook(ULONG32 ulTargetProcessID)
 
 	if (DllModule == NULL)
 	{
-		printf("cannt find dll");
+		printf("Can Not Find Dll");
 		return FALSE;
 	}
 
@@ -131,7 +132,7 @@ BOOL InjectDllBySetWindowsHook(ULONG32 ulTargetProcessID)
 	Sub_1Address = (HOOKPROC)GetProcAddress(DllModule, "Sub_1");
 	if (Sub_1Address == NULL)
 	{
-		printf("cannt found Sub_1");
+		printf("Sub_1 do not Exist!");
 		return FALSE;
 	}
 
@@ -142,11 +143,12 @@ BOOL InjectDllBySetWindowsHook(ULONG32 ulTargetProcessID)
 
 	if (Handle == NULL)
 	{
-		printf("cannt hook");
+		printf("Hook Failed!");
 		return FALSE;
 	}
-	printf("hook success");
+	printf("Hook Success");
 	getchar();
 	UnhookWindowsHookEx(Handle);
 	FreeLibrary(DllModule);
+	return true;
 }
