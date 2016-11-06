@@ -150,7 +150,7 @@ PETHREAD FindApcThread(IN PEPROCESS EProcess)
 
 
 NTSTATUS
-InstallApc(ULONG			Process,
+InstallApc(ULONG	Process,
 	ULONG			Thread,
 	ULONG			MAppedAddress,
 	PKEVENT			Event,
