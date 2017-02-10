@@ -1,6 +1,16 @@
-#进程注入合集:在Windows环境下的进程注入方法。
-##`CreateRemoteThread、APCInject、SuspendThread、SetWindowHookEX`...
+#进程注入合集:在Windows环境下的进程注入方法。  
+##关于进程注入
+```    
+进程注入简而言之就是将代码注入到正在运行的进程内存空间中。  
+Windows为每个进程分配了4G内存空间，在这4G空间中的代码可以被这个进程访问执行。  
+给软件“打补丁”实际上就是进程注入，已经上线的软件想添加一个小功能，添加这个功能不需要重新设计软件，那么只需要将你要执行的代码注入到进程中即可。  
+也有很多黑客利用进程注入将恶意代码注入到目标进程中进行攻击。  
+进程注入也是PC端软件开发必须掌握的一个基础知识点。
+Windows环境下常用的进程注入方法有：CreateRemoteThread、APCInject、SuspendThread、SetWindowHookEX等。  
+之前有看到过一种比较奇特的注入方法：反射注入。反射注入主要是通过对PE文件的操作实现注入，注入成功率高，也最有学习价值。  
 
+```  
+##几种进程注入方法的原理  
 ###一、远程线程注入：
 >* 第一步：打开目标进程(` OpneProcess`)。  
 * 第二步：在目标进程空间为dll得路径内申请空间(`VirtualAllocEX`)。    
@@ -19,7 +29,7 @@
 * 第二步：在自身程序中申请内存，将dll的数据写入。提升自身权限。
 * 第三步：打开目标进程，将动态库载入。 
 
->>其中`Loadibrary`函数是通过修改PE文件s实现的：  
+>>其中`Loadibrary`函数是通过修改PE文件实现的：  
 1、在目标进程地址空间申请空间将dll写入  
 2、得到dll中实现的加载自身的函数在文件中的地址，创建远程线程，将该函数地址传入。而在dll中加载自身的函数也实现的很巧妙。
 
@@ -36,4 +46,28 @@
 
 ###六、挂起线程注入
   
-###七、注册表注入
+###七、注册表注入   
+##开发环境  
+Windows操作系统、VS2015。  
+在32位windows系统和64位windows系统中均测试通过  
+进行测试时请修改源代码中的目标进程以及Dll路径。
+##项目目录  
+```
+.
+|-- APCInject(Ring0)                 // 驱动层的APC注入
+|-- APCInject                        // Ring3层的APC注入
+|-- CreateSuspend                    // 挂起线程注入
+|-- InjectByRegister                 // 注册表注入（未测试）
+|-- ReflectDll                       // 反射注入的Dll
+|-- ReflectiveInject                 // 反射注入
+|-- RemoteThread                     // 远程线程注入
+|-- Src                              // 驱动层的APC注入源码
+|-- Dll.dll                          // 32位测试Dll
+|-- Dll64.dll                        // 64位测试Dll
+|-- Process-Inject.sln               // 项目启动文件
+|-- README.md                        // 项目说明文件
+.
+```
+##其他  
+转载请注明出处，谢谢。  
+欢迎访问[我的个人网站(瓦尔登湖畔一棵松)](http://suvllian.com)。
